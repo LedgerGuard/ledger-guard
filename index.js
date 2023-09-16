@@ -144,6 +144,8 @@ class VoteCampain{
 
 
   async transferToken(tokenId, senderID, senderPKey, target, amount){
+    this.showTokenBalance(target, "(before xfer)")
+
     //Create the transfer transaction
     const transaction = await new TransferTransaction()
          .addTokenTransfer(tokenId, senderID, -1*amount)
@@ -163,11 +165,19 @@ class VoteCampain{
     const transactionStatus = receipt.status;
 
     console.debug("The transaction consensus status " +transactionStatus.toString());
+    this.showTokenBalance(target, "(after xfer)")
 
     //v2.0.5
   }
 
-  async assignToken(tokenId, target, signPKey) {
+  async showTokenBalance(account, message) {
+    const query = new AccountBalanceQuery()
+    .setAccountId(account);
+    const tokenBalance = await query.execute(this.client);
+    console.debug("Token balance for account " + account + " " + message + ": " +tokenBalance.tokens.toString());
+  }
+
+  async associateToken(tokenId, target, signPKey) {
     // Explicitly associate recipient account for use with custom token
     let associateTx = await new TokenAssociateTransaction()
         .setAccountId(target)
@@ -229,7 +239,7 @@ const accounts = await v.createAccount(0 , 'GetMeTheToken')
 
 const tkn = await v.generateToken(treasury.accountId, treasury.privateKey, 5)
 
-v.assignToken(tkn, accounts.accountId, accounts.privateKey);
+await v.associateToken(tkn, accounts.accountId, accounts.privateKey);
 
 v.transferToken(tkn, treasury.accountId,  treasury.privateKey, accounts.accountId, 1)
 //getTokenInfo(client, tkn)
