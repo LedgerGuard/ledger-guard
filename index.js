@@ -83,7 +83,7 @@ class VoteCampain{
     return [accountPrivateKeys, accountIds];
   }
 
-  async generateToken(treasuryID, treasuryKey){
+  async generateToken(treasuryID, treasuryKey, initalSupply){
 
 
     //main(client);
@@ -94,7 +94,7 @@ class VoteCampain{
          .setTokenSymbol("F")
          .setTreasuryAccountId(treasuryID)
          .setAdminKey(adminKey)
-         .setInitialSupply(5)
+         .setInitialSupply(initalSupply)
          .freezeWith(this.client);
 
     //Sign the transaction with the token adminKey and the token treasury account private key
@@ -215,7 +215,7 @@ const treasury =await v.createTreasury()
 
 const accounts = await v.createAccount(0 , 'GetMeTheToken')
 
-const tkn = await v.generateToken(treasury.accountId, treasury.privateKey)
+const tkn = await v.generateToken(treasury.accountId, treasury.privateKey, 5)
 
 v.transferToken(tkn, treasury.accountId,  treasury.privateKey, accounts.accountId, 1)
 //getTokenInfo(client, tkn)
