@@ -1,4 +1,4 @@
-// https://docs.hedera.com/hedera/getting-started/environment-set-up
+const {Voter} = require ("./voter.js");
 
 const {
   Client,
@@ -117,6 +117,7 @@ class VoteCampain{
 
   async createTreasury(){
     const privateKey = PrivateKey.generateED25519();
+
     // Create a new account with 1,000 tinybar starting balance
     const newAccountTransactionResponse = await new AccountCreateTransaction()
       .setKey(privateKey.publicKey)
@@ -231,18 +232,30 @@ class VoteCampain{
 
 async function realMain() {
 
-const v  = new VoteCampain(process.env.MY_ACCOUNT_ID, process.env.MY_PRIVATE_KEY)
+  const v  = new VoteCampain(process.env.MY_ACCOUNT_ID, process.env.MY_PRIVATE_KEY)
 
-const treasury =await v.createTreasury()
+  const treasury =await v.createTreasury()
 
-const accounts = await v.createAccount(0 , 'GetMeTheToken')
+  const accounts = await v.createAccount(1, 'GetMeTheToken')
 
-const tkn = await v.generateToken(treasury.accountId, treasury.privateKey, 5)
+  const candidate = await v.createAccount(1, 'GetMeTheToken')
 
-await v.associateToken(tkn, accounts.accountId, accounts.privateKey);
+  const tkn = await v.generateToken(treasury.accountId, treasury.privateKey, 5)
 
-v.transferToken(tkn, treasury.accountId,  treasury.privateKey, accounts.accountId, 1)
-//getTokenInfo(client, tkn)
+  await v.associateToken(tkn, accounts.accountId, accounts.privateKey);
+
+  await v.transferToken(tkn, treasury.accountId,  treasury.privateKey, accounts.accountId, 1)
+
+  await v.associateToken(tkn, candidate.accountId, candidate.privateKey);
+
+  const voter1 = new Voter(accounts.accountId, accounts.privateKey)
+
+  await v.showTokenBalance(voter1.accountID, 'before')
+
+  await voter1.vote(tkn, candidate.accountId)
+
+  await  v.showTokenBalance(voter1.accountID, '')
+
 
 
 }
