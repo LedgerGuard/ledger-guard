@@ -1,5 +1,5 @@
 import { useAppStore } from '@/store/app';
-import { createRouter, createWebHistory } from 'vue-router'
+import { RouteRecordRaw, createRouter, createWebHistory } from 'vue-router'
 
 const HomeView = () => import('@/views/HomeView.vue');
 const LoginView = () => import('@/views/LoginView.vue');
@@ -7,7 +7,7 @@ const VoteView = () => import('@/views/VoteView.vue');
 const ReultsView = () => import('@/views/ResultsView.vue');
 const CountDownView = () => import('@/views/CountDownView.vue');
 
-const routes = [
+const routes: Readonly<RouteRecordRaw[]> = [
   {
     path: '/',
     component: () => import('@/layouts/default/Default.vue'),
@@ -39,44 +39,43 @@ const routes = [
             },
             component: VoteView
           },
-          {
-            path: 'countdown',
-            name: 'CountDown',
-            beforeEnter: () => {
-              const store = useAppStore();
-
-              if (!store.voted) {
-                return { name: 'Vote' }
-              }
-              else if (store.remainingTimeInMilliseconds() <= 0) {
-                return { name: 'Results' }
-              }
-            },
-            component: CountDownView
-          },
-          {
-            path: 'results',
-            name: 'Results',
-            beforeEnter: () => {
-              const store = useAppStore();
-
-              if (!store.voted) {
-                return { name: 'Vote' }
-              }
-              else if (store.remainingTimeInMilliseconds() > 0) {
-                return { name: 'CountDown' }
-              }
-            },
-            component: ReultsView
-          }
         ]
       },
       {
         path: 'unicc',
         name: 'Unicc',
-        component: HomeView
+        redirect: { name: 'CountDown' },
       },
+      {
+        path: 'countdown',
+        name: 'CountDown',
+        beforeEnter: (to) => {
+          const store = useAppStore();
 
+          if (!store.voted && to.path.includes('voter')) {
+            return { name: 'Vote' }
+          }
+          else if (store.remainingTimeInMilliseconds() <= 0) {
+            return { name: 'Results' }
+          }
+        },
+        component: CountDownView
+      },
+      {
+        path: 'results',
+        name: 'Results',
+        beforeEnter: (to) => {
+          const store = useAppStore();
+
+          if (!store.voted && to.path.includes('voter')) {
+            return { name: 'Vote' }
+          }
+          else if (store.remainingTimeInMilliseconds() > 0) {
+            return { name: 'CountDown' }
+          }
+        },
+        component: ReultsView
+      }
     ],
   },
 ]
