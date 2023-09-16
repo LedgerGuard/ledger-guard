@@ -6,6 +6,7 @@ const LoginView = () => import('@/views/LoginView.vue');
 const VoteView = () => import('@/views/VoteView.vue');
 const ReultsView = () => import('@/views/ResultsView.vue');
 const CountDownView = () => import('@/views/CountDownView.vue');
+const NewPollView = () => import('@/views/NewPollView.vue');
 
 const routes: Readonly<RouteRecordRaw[]> = [
   {
@@ -44,18 +45,25 @@ const routes: Readonly<RouteRecordRaw[]> = [
       {
         path: 'unicc',
         name: 'Unicc',
-        redirect: { name: 'CountDown' },
+        redirect: { name: 'NewPoll' },
+        children: [
+          {
+            path: 'newpoll',
+            name: 'NewPoll',
+            component: NewPollView
+          }
+        ]
       },
       {
         path: 'countdown',
         name: 'CountDown',
         beforeEnter: (to) => {
           const store = useAppStore();
-
           if (!store.voted && to.path.includes('voter')) {
             return { name: 'Vote' }
           }
-          else if (store.remainingTimeInMilliseconds() <= 0) {
+          const remainingTimeInMilliseconds = store.remainingTimeInMilliseconds();
+          if (!!remainingTimeInMilliseconds && remainingTimeInMilliseconds <= 0) {
             return { name: 'Results' }
           }
         },
@@ -70,7 +78,8 @@ const routes: Readonly<RouteRecordRaw[]> = [
           if (!store.voted && to.path.includes('voter')) {
             return { name: 'Vote' }
           }
-          else if (store.remainingTimeInMilliseconds() > 0) {
+          const remainingTimeInMilliseconds = store.remainingTimeInMilliseconds();
+          if (!!remainingTimeInMilliseconds && remainingTimeInMilliseconds > 0) {
             return { name: 'CountDown' }
           }
         },

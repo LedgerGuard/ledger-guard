@@ -1,18 +1,15 @@
-// Utilities
 import { defineStore } from 'pinia'
+
+interface Poll {
+  startDate: Date;
+  endDate: Date;
+  label: string;
+  options: string[];
+}
 
 export const useAppStore = defineStore('app', {
   state: () => ({
-    poll: {
-      startDate: new Date('2021-01-01'),
-      endDate: new Date('2023-09-16T22:04'),
-      label: 'Should we use Vue 3?',
-      options: [
-        'Si',
-        'No',
-        'Forse'
-      ]
-    },
+    poll: null as null | Poll,
     privateKey: null as string | null,
     answer: null as string | null
   }),
@@ -24,8 +21,11 @@ export const useAppStore = defineStore('app', {
     setPrivateKey(privateKey: string | null) {
       this.privateKey = privateKey
     },
+    setPoll(poll: Poll) {
+      this.poll = poll;
+    },
     remainingTimeInMilliseconds() {
-      return +this.poll.endDate - +new Date();
+      return this.poll ? +this.poll.endDate - +new Date() : null; 
     },
     async vote(answer: string) {
       this.answer = answer
