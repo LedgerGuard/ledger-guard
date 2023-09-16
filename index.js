@@ -10,7 +10,11 @@ const {
 } = require("@hashgraph/sdk");
 require("dotenv").config();
 
-async function environmentSetup() {
+function randBetween(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+function environmentSetup() {
   // Grab your Hedera testnet account ID and private key from your .env file
   const myAccountId = process.env.MY_ACCOUNT_ID;
   const myPrivateKey = process.env.MY_PRIVATE_KEY;
@@ -31,64 +35,71 @@ async function environmentSetup() {
   // Set default max transaction fee & max query payment
   client.setMaxTransactionFee(new Hbar(100));
   client.setMaxQueryPayment(new Hbar(50));
-
-  // Create new keys
-  const newAccountPrivateKey = PrivateKey.generateED25519();
-  const newAccountPublicKey = newAccountPrivateKey.publicKey;
-
-  // Create a new account with 1,000 tinybar starting balance
-  const newAccountTransactionResponse = await new AccountCreateTransaction()
-    .setKey(newAccountPublicKey)
-    .setInitialBalance(Hbar.fromTinybars(1000))
-    .execute(client);
-
-  // Get the new account ID
-  const getReceipt = await newAccountTransactionResponse.getReceipt(client);
-  const newAccountId = getReceipt.accountId;
-
-  console.log("\nNew account ID: " + newAccountId);
-
-
-  // Verify the account balance
-  const accountBalance = await new AccountBalanceQuery()
-    .setAccountId(newAccountId)
-    .execute(client);
-
-  console.log(
-    "New account balance is: " +
-      accountBalance.hbars.toTinybars() +
-      " tinybars."
-  );
-
-  // Create the transfer transaction
-  const sendHbar = await new TransferTransaction()
-    .addHbarTransfer(myAccountId, Hbar.fromTinybars(-1000))
-    .addHbarTransfer(newAccountId, Hbar.fromTinybars(1000))
-    .execute(client);
-
-  // Verify the transaction reached consensus
-  const transactionReceipt = await sendHbar.getReceipt(client);
-  console.log(
-    "The transfer transaction from my account to the new account was: " +
-      transactionReceipt.status.toString()
-  );
-
-  // Request the cost of the query
-  const queryCost = await new AccountBalanceQuery()
-    .setAccountId(newAccountId)
-    .getCost(client);
-
-  console.log("\nThe cost of query is: " + queryCost);
-
-  // Check the new account's balance
-  const getNewBalance = await new AccountBalanceQuery()
-    .setAccountId(newAccountId)
-    .execute(client);
-
-  console.log(
-    "The account balance after the transfer is: " +
-      getNewBalance.hbars.toTinybars() +
-      " tinybars."
-  );
+  return client;
 }
-environmentSetup();
+
+async function createAccounts(client, num, initialBalance, logTag) {
+  const accountPrivateKeys = new Array(num);
+  const accountIds = new Array(num);
+  for (let i = 0; i < num; i++) {
+    // TODO: eliminate await to permit concurrent in-flight txns with `Promise.all`
+    // Create new keys
+    accountPrivateKeys[i] = PrivateKey.generateED25519();
+    // Create a new account with 1,000 tinybar starting balance
+    const newAccountTransactionResponse = await new AccountCreateTransaction()
+      .setKey(accountPrivateKeys[i].publicKey)
+      .setInitialBalance(initialBalance)
+      .execute(client);
+    // Get the new account ID
+    const getReceipt = await newAccountTransactionResponse.getReceipt(client);
+    accountIds[i] = getReceipt.accountId;
+
+    const logPrefix = logTag + "[" + i + "]: ";
+    console.log(logPrefix + "created account with ID " + accountIds[i]);
+
+    // Verify the account balance
+    const accountBalance = await new AccountBalanceQuery()
+      .setAccountId(accountIds[i])
+      .execute(client);
+    console.log(logPrefix + "balance = " + accountBalance.hbars.toTinybars() + " tinybars.");
+  }
+  return [accountPrivateKeys, accountIds];
+}
+
+async function main(client) {
+  const numVoters = 5;
+  const numCandidates = 2;
+
+  const [voterPrivateKeys, voterIds] = await createAccounts(client, numVoters, Hbar.fromTinybars(1), "Voter");
+  const [candPrivateKeys, candIds] = await createAccounts(client, numCandidates, Hbar.fromTinybars(0), "Candidate");
+
+  for (let i = 0; i < numVoters; i++) {
+    const elect = randBetween(0, numCandidates);
+    console.log("Voter " + i + " chose candidate " + elect);
+
+    // Create the transfer transaction
+    const sendHbar_ = await new TransferTransaction()
+      .addHbarTransfer(voterIds[i], Hbar.fromTinybars(-1))
+      .addHbarTransfer(candIds[elect], Hbar.fromTinybars(1))
+      .freezeWith(client)
+      .sign(voterPrivateKeys[i]);
+    const sendHbar = await sendHbar_.execute(client);
+
+    // Verify the transaction reached consensus
+    const transactionReceipt = await sendHbar.getReceipt(client);
+    console.log("  Transfer transaction: " + transactionReceipt.status.toString());
+
+    // Check the new account's balance
+    const voterBalance = await new AccountBalanceQuery()
+      .setAccountId(voterIds[i])
+      .execute(client);
+    const candBalance = await new AccountBalanceQuery()
+      .setAccountId(candIds[elect])
+      .execute(client);
+    console.log("  New balance[voter]: " + voterBalance.hbars.toTinybars() + " tinybars.");
+    console.log("  New balance[cand]: " + candBalance.hbars.toTinybars() + " tinybars.");
+  }
+}
+
+client = environmentSetup();
+main(client);
