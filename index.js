@@ -7,9 +7,9 @@ const {
   AccountBalanceQuery,
   Hbar,
   TransferTransaction,
+  TokenAssociateTransaction,
   TokenCreateTransaction,
   TokenInfoQuery,
-
 } = require("@hashgraph/sdk");
 //const NodeClient = require("@hashgraph/sdk/lib/client/NodeClient");
 require("dotenv").config();
@@ -167,6 +167,18 @@ class VoteCampain{
     //v2.0.5
   }
 
+  async assignToken(tokenId, target, signPKey) {
+    // Explicitly associate recipient account for use with custom token
+    let associateTx = await new TokenAssociateTransaction()
+        .setAccountId(target)
+        .setTokenIds([tokenId])
+        .freezeWith(this.client)
+        .sign(signPKey);
+    let associateTxSubmit = await associateTx.execute(this.client);
+    let associateRx = await associateTxSubmit.getReceipt(this.client);
+    console.debug("Token Association: " + associateRx.status);
+  }
+
   async testSpawn() {
     const numVoters = 5;
     const numCandidates = 2;
@@ -216,6 +228,8 @@ const treasury =await v.createTreasury()
 const accounts = await v.createAccount(0 , 'GetMeTheToken')
 
 const tkn = await v.generateToken(treasury.accountId, treasury.privateKey, 5)
+
+v.assignToken(tkn, accounts.accountId, accounts.privateKey);
 
 v.transferToken(tkn, treasury.accountId,  treasury.privateKey, accounts.accountId, 1)
 //getTokenInfo(client, tkn)
