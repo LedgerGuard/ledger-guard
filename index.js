@@ -1,4 +1,5 @@
 const {Voter} = require ("./voter.js");
+const {DbConnector} = require ("./dbConnector.js");
 
 const {
   Client,
@@ -16,8 +17,11 @@ require("dotenv").config();
 
 class VoteCampain{
   client = null
+  db = null
   constructor(account_id, private_key) {
     this.client = this.environmentSetup( account_id, private_key)
+    this.db = new DbConnector()
+    this.db.connect()
   }
 
   environmentSetup(account_id, private_key) {
@@ -84,9 +88,6 @@ class VoteCampain{
   }
 
   async generateToken(treasuryID, treasuryKey, initalSupply){
-
-
-    //main(client);
     //Create the transaction and freeze for manual signing
     const adminKey = PrivateKey.generateED25519();
     const transaction = await new TokenCreateTransaction()
@@ -116,7 +117,13 @@ class VoteCampain{
   }
 
   async createTreasury(){
-    const privateKey = PrivateKey.generateED25519();
+    let privateKey = await this.db.get('treasury')
+    if (privateKey == null){
+      privateKey = PrivateKey.generateED25519();
+      this.db.set('treasury', privateKey.toStringRaw())
+    }else{
+      privateKey = PrivateKey.fromString(privateKey);
+    }
 
     // Create a new account with 1,000 tinybar starting balance
     const newAccountTransactionResponse = await new AccountCreateTransaction()
