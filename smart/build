@@ -1,0 +1,5 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i bash -p solc
+exec solc --overwrite --bin -o binaries/ *.sol
+
+# NOTE(source): https://github.com/ed-marquez/hedera-general-examples/tree/main/src/018_c2c_sol_c2a_erc
