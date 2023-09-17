@@ -1,4 +1,4 @@
-const { createClient } = require('redis');
+//import { createClient } from 'redis'
 
 class DbConnector{
     client = null;
@@ -22,4 +22,4 @@ class DbConnector{
 
 
 
-module.exports = { DbConnector };
+export { DbConnector };

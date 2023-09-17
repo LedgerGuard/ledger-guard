@@ -1,6 +1,6 @@
 <template>
   <v-container class="fill-height">
-    <v-responsive class="align-center text-center fill-height">
+    <v-responsive class="align-center text-center fill-height" v-if="!!poll">
       <h1 class="text-h4 font-weight-bold">{{ poll!.label }}</h1>
       <v-form v-model="form" @submit.prevent="onSubmit">
         <v-radio-group v-model="answer" :readonly="loading" :rules="[rules.required]" clearable>
@@ -9,6 +9,13 @@
         <v-btn :disabled="!form" :loading="loading" type="submit" size="x-large" color="indigo-darken-3" variant="flat" min-width="164"
           rel="noopener noreferrer" class="mt-4">VOTE</v-btn>
       </v-form>
+    </v-responsive>
+
+
+
+    <v-responsive class="align-center text-center fill-height" v-else>
+      <h1 class="text-h4 font-weight-bold">We are not in elections time</h1>
+
     </v-responsive>
   </v-container>
 </template>
@@ -21,7 +28,7 @@ export default {
   setup() {
     const store = useAppStore()
 
-    return { store, poll: store.poll }
+    return { store, poll: store.poll ?? null }
   },
   data: () => ({
     form: false,

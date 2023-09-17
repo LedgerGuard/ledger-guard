@@ -8,7 +8,10 @@
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@chenfengyuan/vue-countdown": "^2.1.2",
+    "@hashgraph/sdk": "^2.34.1",
     "@mdi/font": "7.0.96",
+    "@vue/compiler-sfc": "^3.3.4",
     "chart.js": "^4.4.0",
     "pinia": "^2.0.23",
     "roboto-fontface": "*",

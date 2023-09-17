@@ -2,6 +2,7 @@
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import ViteFonts from 'unplugin-fonts/vite'
+import inject from '@rollup/plugin-inject'
 
 // Utilities
 import { defineConfig } from 'vite'
@@ -13,6 +14,7 @@ export default defineConfig({
     vue({
       template: { transformAssetUrls }
     }),
+
     // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vite-plugin
     vuetify({
       autoImport: true,
@@ -26,6 +28,14 @@ export default defineConfig({
       },
     }),
   ],
+    build: {
+      rollupOptions: {
+        plugins: [inject({
+          include: ['node_modules/@ledgerhq/**'],
+          modules: { Buffer: ['buffer', 'Buffer'], }
+        })],
+      },
+    },
   define: { 'process.env': {} },
   resolve: {
     alias: {

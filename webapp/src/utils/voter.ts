@@ -1,8 +1,4 @@
-const {
-  Client,
-  Hbar,
-  TransferTransaction
-} = require("@hashgraph/sdk");
+import { Client, Hbar, TransferTransaction } from "@hashgraph/sdk"
 
 class Voter{
     accountID = null
@@ -17,7 +13,7 @@ class Voter{
     }
 
     environmentSetup(account_id, private_key){
-      // Grab your Hedera testnet account ID and private key from your .env file
+      // Grab your Hedera testnet account ID and private key from your env.json file
       const myAccountId = account_id;
       const myPrivateKey = private_key ;
 
@@ -63,4 +59,4 @@ class Voter{
     console.debug("The transaction consensus status " +transactionStatus.toString());
   }
 }
-module.exports = { Voter };
+export { Voter };

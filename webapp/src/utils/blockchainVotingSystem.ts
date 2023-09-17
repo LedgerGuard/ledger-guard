@@ -1,7 +1,6 @@
-const {Voter} = require ("./voter.js");
-const {DbConnector} = require ("./dbConnector.js");
-
-const {
+import {Voter} from "./voter";
+//import {DbConnector} from "./dbConnector";
+import  {
   Client,
   PrivateKey,
   AccountCreateTransaction,
@@ -11,21 +10,24 @@ const {
   TokenAssociateTransaction,
   TokenCreateTransaction,
   TokenInfoQuery,
-} = require("@hashgraph/sdk");
+} from "@hashgraph/sdk"
 //const NodeClient = require("@hashgraph/sdk/lib/client/NodeClient");
-require("dotenv").config();
 
 class VoteCampain{
   client = null
-  db = null
+  treasury = null
+  //db = null
   constructor(account_id, private_key) {
     this.client = this.environmentSetup( account_id, private_key)
-    this.db = new DbConnector()
-    this.db.connect()
+    //this.db = new DbConnector()
+    //this.db.connect()
+    this.treasury = this.createTreasury()
   }
 
   environmentSetup(account_id, private_key) {
-      // Grab your Hedera testnet account ID and private key from your .env file
+      // Grab your Hedera testnet account ID and private key from your env.json file
+      console.log("Private key " + private_key)
+    console.log("account id " + account_id)
       const myAccountId = account_id;
       const myPrivateKey = private_key ;
 
@@ -53,26 +55,25 @@ class VoteCampain{
   }
 
   async createAccount(initialBalance, logTag) {
-      // Create new keys
-      let accountPrivateKey= PrivateKey.generateED25519();
-      // Create a new account with 1,000 tinybar starting balance
-      const newAccountTransactionResponse = await new AccountCreateTransaction()
+    // Create new keys
+    let accountPrivateKey = PrivateKey.generateED25519();
+    // Create a new account with 1,000 tinybar starting balance
+    const newAccountTransactionResponse = await new AccountCreateTransaction()
         .setKey(accountPrivateKey.publicKey)
         .setInitialBalance(initialBalance)
         .execute(this.client);
-      // Get the new account ID
-      const getReceipt = await newAccountTransactionResponse.getReceipt(this.client);
-      let accountId = getReceipt.accountId;
+    // Get the new account ID
+    const getReceipt = await newAccountTransactionResponse.getReceipt(this.client);
+    let accountId = getReceipt.accountId;
 
-      const logPrefix = logTag + "[" + Math.random() + "]: ";
-      console.debug(logPrefix + "created account with ID " + accountId);
+    const logPrefix = logTag + "[" + Math.random() + "]: ";
+    console.debug(logPrefix + "created account with ID " + accountId);
 
-      // Verify the account balance
-      const accountBalance = await new AccountBalanceQuery()
+    // Verify the account balance
+    const accountBalance = await new AccountBalanceQuery()
         .setAccountId(accountId)
         .execute(this.client);
-      console.debug(logPrefix + "balance = " + accountBalance.hbars.toTinybars() + " tinybars.");
-      return {"accountId": accountId , "privateKey": accountPrivateKey}
+    return {'accountId': accountId, 'privateKey': accountPrivateKey};
   }
 
   async createAccounts(num, initialBalance, debugTag) {
@@ -84,7 +85,7 @@ class VoteCampain{
       createAccountPromises.push(createAccount());
     }
     await Promise.all(createAccountPromises);
-    return [accountPrivateKeys, accountIds];
+    return {"accountPrivateKeys":accountPrivateKeys, "accountIds":accountIds};
   }
 
   async generateToken(treasuryID, treasuryKey, initalSupply){
@@ -117,13 +118,14 @@ class VoteCampain{
   }
 
   async createTreasury(){
-    let privateKey = await this.db.get('treasury')
-    if (privateKey == null){
-      privateKey = PrivateKey.generateED25519();
-      this.db.set('treasury', privateKey.toStringRaw())
-    }else{
-      privateKey = PrivateKey.fromString(privateKey);
-    }
+    let privateKey = PrivateKey.generateED25519();
+    // let privateKey = await this.db.get('treasury')
+    //if (privateKey == null){
+      //privateKey = PrivateKey.generateED25519();
+        // this.db.set('treasury', privateKey.toStringRaw())
+    //}else{
+    //  privateKey = PrivateKey.fromString(privateKey);
+    //}
 
     // Create a new account with 1,000 tinybar starting balance
     const newAccountTransactionResponse = await new AccountCreateTransaction()
@@ -266,4 +268,5 @@ async function realMain() {
 
 
 }
-realMain()
+
+export {VoteCampain}
